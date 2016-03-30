@@ -1,0 +1,32 @@
+Multilayer perceptron
+
+layer
+-----
+activation (relu, sigmoid)
+
+inputs
+------
+
+weights
+biases
+
+global
+------
+
+loss
+optimizer?
+
+params
+------
+
+learning rate
+training epochs?
+batch size?
+display step?
+
+network params
+--------------
+n_hidden_1 (features in layer)
+n_hidden_2
+n_input (dim of input data)
+n_classes (num of classes)
