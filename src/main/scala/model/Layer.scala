@@ -1,12 +1,12 @@
 package model
 
-import breeze.linalg.DenseVector
+import breeze.linalg.{DenseMatrix, DenseVector}
 import model.Util.Placeholder
 
 case class Layer(
-  placeholder: Placeholder,
-  weightVec: DenseVector[Double],
-  biasVec: DenseVector[Double]
+//  placeholder: Placeholder,
+  weightMatrix: DenseMatrix[Double]
+//  biasMatrix: DenseMatrix[Double]
 ) {
 
   def xxx = ???

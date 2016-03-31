@@ -9,5 +9,8 @@ trait Cost {
 
 class L2Cost extends Cost {
 
-  def calcLoss(activation: Activation, numInputs: Int, outputWeights: Placeholder) = ???
+  def calcLoss(
+    activation: Activation,
+    numInputs: Int,
+    outputWeights: Placeholder) = ???
 }
