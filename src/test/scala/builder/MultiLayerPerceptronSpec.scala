@@ -1,10 +1,10 @@
-package model
+package builder
 
-import org.scalatest._
-import Matchers._
 import breeze.linalg._
+import model.{GradientDescentOptimizer, L2Cost, Layer, SigmoidActivation}
+import org.scalatest._
 
-class MultiLayerPerceptronClassifierSpec extends WordSpec {
+class MultiLayerPerceptronSpec extends WordSpec {
 
   def getRandomWeights(
     inputLayerSize: Int,
@@ -18,7 +18,7 @@ class MultiLayerPerceptronClassifierSpec extends WordSpec {
     (w1, w2)
   }
 
-  def getSeededWeights: (DenseMatrix[Double], DenseMatrix[Double]) = {
+  def getDummyWeights: (DenseMatrix[Double], DenseMatrix[Double]) = {
     val w1: DenseMatrix[Double] = DenseMatrix(
       (1.76405235,  0.40015721,  0.97873798),
       (2.2408932,   1.86755799, -0.97727788)
@@ -32,7 +32,10 @@ class MultiLayerPerceptronClassifierSpec extends WordSpec {
     (w1, w2)
   }
 
+  def getDummyBiases: (DenseMatrix[Double], DenseMatrix[Double]) = ???
+
   def getNormalizedTrainData: (DenseMatrix[Double], DenseMatrix[Double]) = {
+    // TODO: make this work with normalize
     val trainXNorm: DenseMatrix[Double] = DenseMatrix(
       (3.0 / 10.0, 5.0 / 5.0),
       (5.0 / 10.0, 1.0 / 5.0),
@@ -51,20 +54,21 @@ class MultiLayerPerceptronClassifierSpec extends WordSpec {
   "ForwardProp" should {
     "propagate weights correctly" in {
       val (trainX, trainY) = getNormalizedTrainData
-      val (w1, w2) = getSeededWeights
+      val (w1, w2) = getDummyWeights
+      val (b1, b2) = getDummyBiases
 
       println(trainX)
       println(trainY)
 
-      val l1 = Layer(weightMatrix = w1)
-      val l2 = Layer(weightMatrix = w2) // output layer
+      val l1 = Layer(weightMatrix = w1, biasMatrix = b1, SigmoidActivation)
+      val l2 = Layer(weightMatrix = w2, biasMatrix = b2, SigmoidActivation) // output layer
 
+      // activation per layer!
       val output = MultiLayerPerceptron.builder
-        .withActivation(SigmoidActivation)
         .withLayer(l1)
         .withLayer(l2)
-        .withOptimizer(GradientDescentOptimizer)
-        .forwardProp(trainX)
+        .withOptimizer(GradientDescentOptimizer(L2Cost, 1.0))
+        .train(trainX, trainY, 100)
 
       println(output)
 

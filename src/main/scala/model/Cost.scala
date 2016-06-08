@@ -1,16 +1,22 @@
 package model
 
-import model.Util.Placeholder
+import breeze.linalg.{sum, DenseMatrix}
+import breeze.numerics.pow
 
 trait Cost {
 
-  def calcLoss = ???
+  def cost(yHat: DenseMatrix[Double], y: DenseMatrix[Double]): Double
+
+  def costPrime(z: DenseMatrix[Double]): Double
+
+  def delta(layer: Layer, yHat: DenseMatrix[Double], trainY: DenseMatrix[Double]): DenseMatrix[Double]
 }
 
-class L2Cost extends Cost {
+object L2Cost extends Cost {
 
-  def calcLoss(
-    activation: Activation,
-    numInputs: Int,
-    outputWeights: Placeholder) = ???
+  def cost(yHat: DenseMatrix[Double], y: DenseMatrix[Double]): Double = sum(pow(y - yHat, 2)) * 0.5
+
+  def costPrime(z: DenseMatrix[Double]): DenseMatrix[Double] = ???
+
+  def delta(layer: Layer, yHat: DenseMatrix[Double], trainY: DenseMatrix[Double]): DenseMatrix[Double] = ???
 }

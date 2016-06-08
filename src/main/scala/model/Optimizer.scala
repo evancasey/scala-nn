@@ -1,29 +1,16 @@
 package model
 
+import breeze.linalg._
+
 trait Optimizer {
-  def minimize(cost: Cost): Optimizer
+  val cost: Cost
+  val learningRate: Double
+
+  // Returns updated weights
+  //def minimize(backProp: Any)(weights: Seq[DenseMatrix[Double]], deltas: Seq[DenseMatrix[Double]]): DenseMatrix[Double]
 }
 
-object GradientDescentOptimizer extends Optimizer {
-  def minimize(cost: Cost) = ???
+case class GradientDescentOptimizer(cost: Cost, learningRate: Double) extends Optimizer {
 
-//      private def gradientDescent(
-//        trainData: TrainData,
-//        itw: DenseVector[Double],
-//        maxIterations: Int,
-//        learningRate: Double): DenseVector[Double] = {
-//
-//        for (i <- 1 to maxIterations) {
-//          println("On iteration " + i)
-//          val gradient: DenseVector[Double] = trainData.map { point =>
-//            point.featureVector * point.label * ((1 / (1 + exp(itw.dot(point.featureVector) * -point.label))) - 1)
-//          }.reduce(_ + _)
-//
-//          println("Target w:" + itw)
-//          itw -= gradient * learningRate
-//        }
-//
-//        println("Final w: " + itw)
-//        itw
-//      }
+
 }
