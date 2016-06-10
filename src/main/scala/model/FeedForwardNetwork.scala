@@ -12,8 +12,8 @@ object FeedForwardNetwork {
       weightMatrix = l1.weightMatrix + l2.weightMatrix,
       biasMatrix = l1.biasMatrix + l2.biasMatrix,
       activation = l1.activation,
-      z = Some(l1.z.get + l2.z.get),
-      sigma = Some(l1.sigma.get + l2.sigma.get)
+      z = l1.z + l2.z,
+      sigma = l1.sigma + l2.sigma
     )
   }
 }

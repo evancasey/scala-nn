@@ -7,32 +7,38 @@ import breeze.linalg._
 case class Trainer(optimizer: Optimizer) {
   import Util._
 
-  def train(network: FeedForwardNetwork, trainingData: TrainingData): FeedForwardNetwork = {
-    val (trainX, trainY) = trainingData
-    backpropagate(forwardpropagate(network,trainX), trainY)
+  def train(placeholders: Seq[Placeholder], trainingData: TrainingData): FeedForwardNetwork = {
+    val miniBatches: Seq[TrainingData] = ???
+    val miniBatchSize: Int = ???
+
+    miniBatches.map { batch =>
+      val (trainX, trainY) = batch
+      backpropagate(forwardpropagate(placeholders,trainX), trainY)
+    }.reduce { (l, r) =>
+      updateNetwork(miniBatchSize, l, r)
+    }
   }
 
   /**
     * Does forwardpropagation for a single input matrix (can hold any number of input vectors)
     */
-  def forwardpropagate(network: FeedForwardNetwork, trainX: DenseMatrix[Double]): (DenseMatrix[Double], FeedForwardNetwork) = {
-    def step(input: DenseMatrix[Double], layer: Layer): (DenseMatrix[Double], Layer) = {
-      val z = layer.z(input)
+  def forwardpropagate(placeholders: Seq[Placeholder], trainX: DenseMatrix[Double]): (DenseMatrix[Double], FeedForwardNetwork) = {
+    def step(input: DenseMatrix[Double], placeholder: Placeholder): (DenseMatrix[Double], Layer) = {
+      val z = placeholder.z(input)
 
-      val newLayer = Layer(
-        weightMatrix = layer.weightMatrix,
-        biasMatrix = layer.biasMatrix,
-        activation = layer.activation,
-        z = Some(z),
-        sigma = Some(input)
+      val layer = Layer(
+        weightMatrix = placeholder.weightMatrix,
+        biasMatrix = placeholder.biasMatrix,
+        activation = placeholder.activation,
+        z = z,
+        sigma = input
       )
 
-      val sigma = layer.sigma(z)
-
-      (sigma: DenseMatrix[Double], newLayer: Layer)
+      val sigma = placeholder.activation.transform(z)
+      (sigma: DenseMatrix[Double], layer: Layer)
     }
 
-    val (outputSigma, layers) = mapAccumLeft(network.layers)(trainX, step)
+    val (outputSigma, layers) = mapAccumLeft(placeholders)(trainX, step)
     (outputSigma, FeedForwardNetwork(layers))
   }
 
@@ -47,7 +53,7 @@ case class Trainer(optimizer: Optimizer) {
     val nablaOutputLayer = updateLayer(outputLayer, outputDelta)
 
     def step(delta: DenseMatrix[Double], layer: Layer): (DenseMatrix[Double], Layer) = {
-      val newDelta = (layer.weightMatrix.t * delta) * layer.sigmaPrime(layer.z.get)
+      val newDelta = (layer.weightMatrix.t * delta) * layer.activation.transformPrime(layer.z)
       val nablaLayer = updateLayer(layer, newDelta)
 
       (newDelta: DenseMatrix[Double], nablaLayer: Layer)
@@ -58,9 +64,8 @@ case class Trainer(optimizer: Optimizer) {
   }
 
   /**
-    * TODO: Move this to FeedForwardNetworkMonoid???
     * Updates the network after doing backprop on a minibatch by combining the backprop'd network with the "base" one.
-    * Note: we can think of this as an associative op: (x + y) + z = x + (y + z)
+    * Note: this as only associative for vanilla SGD
     */
   def updateNetwork(
       minibatchSize: Int,
@@ -68,7 +73,7 @@ case class Trainer(optimizer: Optimizer) {
       nablasNetwork: FeedForwardNetwork): FeedForwardNetwork = {
     val ffnMonoid = new FeedForwardNetworkMonoid
     val scaledNetwork = FeedForwardNetwork(
-      layers = nablasNetwork.layers.map(_.scale(1 - (optimizer.learningRate / minibatchSize)))
+      layers = nablasNetwork.layers.map(_.scale(1.0 - (optimizer.learningRate / minibatchSize)))
     )
     ffnMonoid.plus(baseNetwork, scaledNetwork)
   }
@@ -78,15 +83,12 @@ case class Trainer(optimizer: Optimizer) {
     * and sigma values to be accessed on future iterations.
     */
   def updateLayer(layer: Layer, delta: DenseMatrix[Double]): Layer = {
-    val z = layer.z.get
-    val sigma = layer.sigma.get
-
     Layer(
-      weightMatrix = delta * sigma.t,
+      weightMatrix = delta * layer.sigma.t,
       biasMatrix = delta,
       activation = layer.activation,
-      z = Some(z),
-      sigma = Some(sigma)
+      z = layer.z,
+      sigma = layer.sigma
     )
   }
 }

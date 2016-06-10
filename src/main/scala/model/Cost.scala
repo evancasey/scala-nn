@@ -16,7 +16,7 @@ object L2Cost extends Cost {
 
   def cost(yHat: DenseMatrix[Double], y: DenseMatrix[Double]): Double = sum(pow(y - yHat, 2)) * 0.5
 
-  def costPrime(z: DenseMatrix[Double]): DenseMatrix[Double] = ???
+  def costPrime(z: DenseMatrix[Double]): Double = ???
 
   def delta(layer: Layer, yHat: DenseMatrix[Double], trainY: DenseMatrix[Double]): DenseMatrix[Double] = ???
 }
