@@ -7,15 +7,16 @@ import breeze.linalg._
 case class Trainer(optimizer: Optimizer) {
   import Util._
 
-  def train(placeholders: Seq[Placeholder], trainingData: TrainingData): FeedForwardNetwork = {
-    val miniBatches: Seq[TrainingData] = ???
+  def train(placeholders: Seq[Placeholder], trainingData: Seq[(TrainX, TrainY)]): FeedForwardNetwork = {
+
+    val miniBatches: Seq[MiniBatch] = ???
     val miniBatchSize: Int = ???
 
     miniBatches.map { batch =>
       val (trainX, trainY) = batch
-      backpropagate(forwardpropagate(placeholders,trainX), trainY)
-    }.reduce { (l, r) =>
-      updateNetwork(miniBatchSize, l, r)
+      backpropagate(forwardpropagate(placeholders, trainX), trainY)
+    }.reduce { (l, r) => //replace with fold because each batch depends on weights of the last!
+      aggregateGrads(miniBatchSize, l, r)
     }
   }
 
@@ -67,7 +68,7 @@ case class Trainer(optimizer: Optimizer) {
     * Updates the network after doing backprop on a minibatch by combining the backprop'd network with the "base" one.
     * Note: this as only associative for vanilla SGD
     */
-  def updateNetwork(
+  def aggregateGrads(
       minibatchSize: Int,
       baseNetwork: FeedForwardNetwork,
       nablasNetwork: FeedForwardNetwork): FeedForwardNetwork = {
@@ -83,6 +84,7 @@ case class Trainer(optimizer: Optimizer) {
     * and sigma values to be accessed on future iterations.
     */
   def updateLayer(layer: Layer, delta: DenseMatrix[Double]): Layer = {
+    // TODO: Return a different type other than layer
     Layer(
       weightMatrix = delta * layer.sigma.t,
       biasMatrix = delta,

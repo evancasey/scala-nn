@@ -8,7 +8,7 @@ object Util {
 
   type TrainX = DenseMatrix[Double]
   type TrainY = DenseMatrix[Double]
-  type TrainingData = (TrainX, TrainY)
+  type MiniBatch = (TrainX, TrainY)
 
   /* Builder Utils */
 
