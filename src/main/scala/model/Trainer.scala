@@ -5,92 +5,65 @@ import breeze.linalg._
 
 // TODO: require compat. matrices, add logging
 case class Trainer(optimizer: Optimizer) {
+
   import Util._
 
-  def train(placeholders: Seq[Placeholder], trainingData: Seq[(TrainX, TrainY)]): FeedForwardNetwork = {
+  def train(placeholders: Seq[Layer], trainingData: Seq[(TrainX, TrainY)]): FFN = {
 
-    val miniBatches: Seq[MiniBatch] = ???
-    val miniBatchSize: Int = ???
+    val miniBatches: Seq[MiniBatch] = trainingData
+    val miniBatchSize: Int = trainingData.size
 
-    miniBatches.map { batch =>
+    def step(network: FFN, batch: MiniBatch): FFN = {
       val (trainX, trainY) = batch
-      backpropagate(forwardpropagate(placeholders, trainX), trainY)
-    }.reduce { (l, r) => //replace with fold because each batch depends on weights of the last!
-      aggregateGrads(miniBatchSize, l, r)
+      val update = backpropagate(forwardpropagate(network.layers, trainX), trainY)
+
+      network.merge(update, miniBatchSize, optimizer)
     }
+
+    miniBatches.foldLeft(FFN(placeholders))(step)
   }
 
   /**
-    * Does forwardpropagation for a single input matrix (can hold any number of input vectors)
+    * Does forward propagation for a single input matrix (can hold any number of input vectors)
     */
-  def forwardpropagate(placeholders: Seq[Placeholder], trainX: DenseMatrix[Double]): (DenseMatrix[Double], FeedForwardNetwork) = {
-    def step(input: DenseMatrix[Double], placeholder: Placeholder): (DenseMatrix[Double], Layer) = {
-      val z = placeholder.z(input)
+  def forwardpropagate(placeholders: Seq[Layer], trainX: DenseMatrix[Double]): (DenseMatrix[Double], CachedFFN) = {
+    def step(input: DenseMatrix[Double], layer: Layer): (DenseMatrix[Double], CachedLayer) = {
+      val z = layer.z(input)
 
-      val layer = Layer(
-        weightMatrix = placeholder.weightMatrix,
-        biasMatrix = placeholder.biasMatrix,
-        activation = placeholder.activation,
+      val cachedLayer = CachedLayer(
+        weightMatrix = layer.weightMatrix,
+        biasMatrix = layer.biasMatrix,
+        activation = layer.activation,
         z = z,
         sigma = input
       )
 
-      val sigma = placeholder.activation.transform(z)
-      (sigma: DenseMatrix[Double], layer: Layer)
+      val sigma = layer.activation.transform(z)
+      (sigma: DenseMatrix[Double], cachedLayer: CachedLayer)
     }
 
     val (outputSigma, layers) = mapAccumLeft(placeholders)(trainX, step)
-    (outputSigma, FeedForwardNetwork(layers))
+    (outputSigma, CachedFFN(layers))
   }
 
   /**
     * Does backpropagation over a pre-forwardprop'd network and a single output matrix (can hold any number of output points)
     */
-  def backpropagate(forward: (DenseMatrix[Double], FeedForwardNetwork), trainY: DenseMatrix[Double]): FeedForwardNetwork = {
+  def backpropagate(forward: (DenseMatrix[Double], CachedFFN), trainY: DenseMatrix[Double]): FFN = {
     val (outputSigma, network) = forward
     val (hiddenLayers, outputLayer) = (network.layers.dropRight(1), network.layers.last)
 
     val outputDelta = optimizer.cost.delta(outputLayer, outputSigma, trainY)
-    val nablaOutputLayer = updateLayer(outputLayer, outputDelta)
+    val nablaOutputLayer = outputLayer.applyDelta(outputDelta)
 
-    def step(delta: DenseMatrix[Double], layer: Layer): (DenseMatrix[Double], Layer) = {
+    def step(delta: DenseMatrix[Double], layer: CachedLayer): (DenseMatrix[Double], Layer) = {
       val newDelta = (layer.weightMatrix.t * delta) * layer.activation.transformPrime(layer.z)
-      val nablaLayer = updateLayer(layer, newDelta)
+      val nablaLayer = layer.applyDelta(newDelta)
 
       (newDelta: DenseMatrix[Double], nablaLayer: Layer)
     }
 
     val (_, nablaHiddenLayers) = mapAccumRight(hiddenLayers)(outputDelta, step)
-    FeedForwardNetwork(nablaHiddenLayers :+ nablaOutputLayer)
-  }
-
-  /**
-    * Updates the network after doing backprop on a minibatch by combining the backprop'd network with the "base" one.
-    * Note: this as only associative for vanilla SGD
-    */
-  def aggregateGrads(
-      minibatchSize: Int,
-      baseNetwork: FeedForwardNetwork,
-      nablasNetwork: FeedForwardNetwork): FeedForwardNetwork = {
-    val ffnMonoid = new FeedForwardNetworkMonoid
-    val scaledNetwork = FeedForwardNetwork(
-      layers = nablasNetwork.layers.map(_.scale(1.0 - (optimizer.learningRate / minibatchSize)))
-    )
-    ffnMonoid.plus(baseNetwork, scaledNetwork)
-  }
-
-  /**
-    * Applies a layer update for an arbitrary delta to the provided layer and returns a new layer. This copies over the z
-    * and sigma values to be accessed on future iterations.
-    */
-  def updateLayer(layer: Layer, delta: DenseMatrix[Double]): Layer = {
-    // TODO: Return a different type other than layer
-    Layer(
-      weightMatrix = delta * layer.sigma.t,
-      biasMatrix = delta,
-      activation = layer.activation,
-      z = layer.z,
-      sigma = layer.sigma
-    )
+    FFN(nablaHiddenLayers :+ nablaOutputLayer)
   }
 }

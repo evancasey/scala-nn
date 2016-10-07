@@ -12,5 +12,7 @@ trait Optimizer {
 
 case class GradientDescentOptimizer(cost: Cost, learningRate: Double) extends Optimizer {
 
+  def minimize(gradUpdates: Any, other: FFN): FFN = ???
+
 
 }

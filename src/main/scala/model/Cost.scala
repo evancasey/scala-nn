@@ -9,7 +9,7 @@ trait Cost {
 
   def costPrime(z: DenseMatrix[Double]): Double
 
-  def delta(layer: Layer, yHat: DenseMatrix[Double], trainY: DenseMatrix[Double]): DenseMatrix[Double]
+  def delta(layer: CachedLayer, yHat: DenseMatrix[Double], trainY: DenseMatrix[Double]): DenseMatrix[Double]
 }
 
 object L2Cost extends Cost {
@@ -18,5 +18,5 @@ object L2Cost extends Cost {
 
   def costPrime(z: DenseMatrix[Double]): Double = ???
 
-  def delta(layer: Layer, yHat: DenseMatrix[Double], trainY: DenseMatrix[Double]): DenseMatrix[Double] = ???
+  def delta(layer: CachedLayer, yHat: DenseMatrix[Double], trainY: DenseMatrix[Double]): DenseMatrix[Double] = ???
 }

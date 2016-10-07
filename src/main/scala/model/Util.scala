@@ -10,12 +10,6 @@ object Util {
   type TrainY = DenseMatrix[Double]
   type MiniBatch = (TrainX, TrainY)
 
-  /* Builder Utils */
-
-  abstract class TRUE
-
-  abstract class FALSE
-
   /* Seq impl of MapAccum */
 
   /**

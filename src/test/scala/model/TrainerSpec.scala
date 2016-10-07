@@ -60,14 +60,14 @@ class TrainerSpec extends WordSpec {
       println(trainingData._1) // x
       println(trainingData._2) // y
 
-      val placeholders = Seq(
-        Placeholder(weightMatrix = w1, biasMatrix = b1, SigmoidActivation),
-        Placeholder(weightMatrix = w2, biasMatrix = b2, SigmoidActivation) // output layer
+      val layers = Seq(
+        Layer(weightMatrix = w1, biasMatrix = b1, SigmoidActivation),
+        Layer(weightMatrix = w2, biasMatrix = b2, SigmoidActivation) // output layer
       )
 
       val optimizer = GradientDescentOptimizer(L2Cost, 1.0)
       val trainer = Trainer(optimizer)
-      val output = trainer.forwardpropagate(placeholders, trainingData._1)
+      val output = trainer.forwardpropagate(layers, trainingData._1)
 
       println(output)
     }
