@@ -30,5 +30,5 @@ val layers = Seq(
 
 val optimizer = GradientDescentOptimizer(L2Cost, 1.0)
 val trainer = Trainer(optimizer)
-val res = trainer.res(layers, trainingData._1)
+val res = trainer.train(layers, trainingData._1)
 ```
